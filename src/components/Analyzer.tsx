@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useState} from 'react';
-const menu=['DNS Report','SEO Analysis','Content Analysis','Technical SEO','SERP Live Editor','Link Redirection','IP Geo Info','Domain Geo Info','DNS Tools'];
-const icons=['⬡','▥','▤','⚙','✎','↗','●','◎','▦'];
+const menu=['DNS Report','SEO Analysis','Content Analysis','Technical SEO','SERP Live Editor','Link Redirection','IP Geo Info','Domain Geo Info','WHO Domain','DNS Tools'];
+const icons=['⬡','▥','▤','⚙','✎','↗','●','◎','◉','▦'];
 const fmt=(n:number)=>n<1024?`${n} B`:n<1048576?`${(n/1024).toFixed(1)} KB`:`${(n/1048576).toFixed(1)} MB`;
 export default function Analyzer(){const [url,setUrl]=useState('Phát triển bởi Sku');const [data,setData]=useState<any>(null);const [error,setError]=useState('');const [loading,setLoading]=useState(false);const [tab,setTab]=useState(menu[0]);async function run(e:any){e.preventDefault();setLoading(true);setError('');try{const r=await fetch('/api/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url})});const j=await r.json();if(!r.ok)throw new Error(j.error);setData(j)}catch(e:any){setError(e.message)}finally{setLoading(false)}}return <div className="app"><aside><div className="brand">🌐<b>SKU</b><span>CHECKER</span></div>{menu.map((x,i)=><button key={x} className={tab===x?'sel':''} onClick={()=>setTab(x)}><i>{icons[i]}</i>{x}</button>)}<div className="credit">Phát triển bởi Sku</div></aside><main className="workspace"><form className="search" onSubmit={run}><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="Phát triển bởi Sku"/><button disabled={loading}>{loading?'Đang quét…':'Analyze'}</button></form>{error&&<div className="error">{error}</div>}{data?<Panel tab={tab} d={data}/>:<section className="empty"><h1>Website & Domain Analyzer</h1><p>Nhập URL để bắt đầu phân tích DNS, SEO, content, technical SEO, redirect và network.</p></section>}</main></div>}
 function Section({title,children}:{title:string;children:any}){return <section className="panel"><h2>{title}</h2>{children}</section>}
@@ -14,6 +14,7 @@ if(tab==='SERP Live Editor')return <SerpEditor d={d}/>;
 if(tab==='Link Redirection')return <><Title t="Link Redirect info"/><Section title={d.http.finalUrl}><div className="status">{d.http.status}</div> <b>{d.http.responseTimeMs} ms</b><h3>Redirect Chain</h3>{d.http.redirects.length?d.http.redirects.map((x:string)=><p key={x}>{x}</p>):<p>No redirects</p>}</Section><Section title="Raw Headers"><Table rows={Object.entries(d.http.headers).map(([Header,Value])=>({Header,Value}))}/></Section></>;
 if(tab==='IP Geo Info')return <IpGeoPanel d={d}/>;
 if(tab==='Domain Geo Info')return <DomainGeoPanel d={d}/>;
+if(tab==='WHO Domain')return <WhoDomainPanel d={d}/>;
 return <><Title t="DNS Tools"/><Section title="DNS Records"><h3>A</h3><pre>{JSON.stringify(d.dns.A,null,2)}</pre><h3>AAAA</h3><pre>{JSON.stringify(d.dns.AAAA,null,2)}</pre><h3>MX</h3><pre>{JSON.stringify(d.dns.MX,null,2)}</pre><h3>NS</h3><pre>{JSON.stringify(d.dns.NS,null,2)}</pre><h3>TXT</h3><pre>{JSON.stringify(d.dns.TXT,null,2)}</pre><h3>SOA</h3><pre>{JSON.stringify(d.dns.SOA,null,2)}</pre></Section></>}
 function Title({t}:{t:string}){return <h1 className="pagetitle">{t}</h1>}
 function Table({rows}:{rows:any[]}){if(!rows.length)return <p>No data.</p>;const cols=Object.keys(rows[0]);return <div className="scroll"><table><thead><tr>{cols.map(c=><th key={c}>{c}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{cols.map(c=><td key={c}>{typeof r[c]==='object'?JSON.stringify(r[c]):String(r[c]??'')}</td>)}</tr>)}</tbody></table></div>}
@@ -23,3 +24,21 @@ function SerpEditor({d}:{d:any}){const [title,setTitle]=useState(d.seo.title);co
 function GeoRows({g}:{g:any}){return <KV rows={[["IP",g?.ip],["City",g?.city],["State / Region",g?.region],["Postal Code",g?.postal],["Country Code",g?.countryCode],["Country",g?.country],["Latitude",g?.latitude],["Longitude",g?.longitude],["ISP",g?.isp],["ASN",g?.asn]]}/>}
 function DomainGeoPanel({d}:{d:any}){const g=d.domainGeo;return <><Title t="Domain GEO Info"/><Section title={`IP Report: ${d.target.hostname}`}><GeoRows g={g}/><KV rows={[["IPv4 records",d.dns.A.join(', ')||'N/A'],["IPv6 records",d.dns.AAAA.join(', ')||'N/A'],["Nameservers",d.dns.NS.join(', ')||'N/A']]}/>{!g&&<p className="warn">Không lấy được dữ liệu GeoIP ở thời điểm hiện tại.</p>}</Section></>}
 function IpGeoPanel({d}:{d:any}){const [target,setTarget]=useState('');const [geo,setGeo]=useState<any>(null);const [err,setErr]=useState('');const [busy,setBusy]=useState(false);async function lookup(value:string){if(!value)return;setBusy(true);setErr('');try{const r=await fetch('/api/geo',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({target:value})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Lookup thất bại');setGeo(j)}catch(e:any){setErr(e.message)}finally{setBusy(false)}}useEffect(()=>{let alive=true;(async()=>{try{const r=await fetch('https://api.ipify.org?format=json',{cache:'no-store'});const j=await r.json();if(alive&&j.ip){setTarget(j.ip);lookup(j.ip)}}catch{if(alive){setTarget(d.dns.A[0]||d.dns.AAAA[0]||'');}}})();return()=>{alive=false}},[]);return <><Title t="IP GEO Info"/><Section title={geo?`Your IP Report: ${geo.ip}`:'IP Geo Lookup'}><div className="geoSearch"><input className="field" value={target} onChange={e=>setTarget(e.target.value)} placeholder="Nhập IP hoặc domain"/><button onClick={()=>lookup(target)} disabled={busy}>{busy?'Đang tra…':'Lookup'}</button></div>{err&&<p className="warn">{err}</p>}{geo?<GeoRows g={geo}/>:<p>Nhập IP hoặc domain để xem thông tin vị trí mạng.</p>}</Section></>}
+
+function formatRdapDate(v:any){if(!v)return 'N/A';try{return new Intl.DateTimeFormat('vi-VN',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}catch{return String(v)}}
+function WhoDomainPanel({d}:{d:any}){
+  const [target,setTarget]=useState(d?.target?.hostname||'');
+  const [rdap,setRdap]=useState<any>(null);
+  const [err,setErr]=useState('');
+  const [busy,setBusy]=useState(false);
+  async function lookup(){
+    const value=target.trim(); if(!value)return;
+    setBusy(true);setErr('');setRdap(null);
+    try{
+      const r=await fetch('/api/rdap',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({domain:value})});
+      const j=await r.json(); if(!r.ok)throw new Error(j.error||'RDAP lookup thất bại'); setRdap(j);
+    }catch(e:any){setErr(e.message)}finally{setBusy(false)}
+  }
+  useEffect(()=>{if(target)lookup()},[]);
+  return <><Title t="WHO Domain (RDAP)"/><Section title="RDAP Domain Lookup"><div className="geoSearch"><input className="field" value={target} onChange={e=>setTarget(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();lookup()}}} placeholder="Nhập domain, ví dụ sku.io.vn"/><button onClick={lookup} disabled={busy}>{busy?'Đang tra…':'Lookup RDAP'}</button></div>{err&&<p className="warn">{err}</p>}{rdap&&<><KV rows={[["Domain",rdap.domain],["Unicode Domain",rdap.unicodeName],["Handle",rdap.handle],["Registrar",rdap.registrar],["Registrar IANA ID",rdap.registrarIanaId],["Created",formatRdapDate(rdap.created)],["Updated",formatRdapDate(rdap.updated)],["Expires",formatRdapDate(rdap.expires)],["RDAP Server",rdap.rdapServer]]}/><h3>Domain Status</h3>{rdap.status?.length?<div className="chips">{rdap.status.map((x:string)=><span key={x}>{x}</span>)}</div>:<p>N/A</p>}<h3>Nameservers</h3>{rdap.nameservers?.length?<Table rows={rdap.nameservers.map((x:string)=>({Nameserver:x}))}/>:<p>N/A</p>}<h3>Contacts / Entities</h3>{rdap.entities?.length?<Table rows={rdap.entities}/>:<p>RDAP server không công khai contact.</p>}<details><summary>Raw RDAP JSON</summary><pre>{JSON.stringify(rdap.raw,null,2)}</pre></details></>}</Section></>
+}
