@@ -1,0 +1,3 @@
+import dns from "node:dns/promises";
+const safe=async<T>(fn:()=>Promise<T>,fallback:T)=>{try{return await fn()}catch{return fallback}};
+export async function inspectDns(domain:string){const [A,AAAA,MX,NS,TXT,CNAME,SOA,dmarcRaw]=await Promise.all([safe(()=>dns.resolve4(domain),[]),safe(()=>dns.resolve6(domain),[]),safe(()=>dns.resolveMx(domain),[]),safe(()=>dns.resolveNs(domain),[]),safe(()=>dns.resolveTxt(domain),[]),safe(()=>dns.resolveCname(domain),[]),safe(()=>dns.resolveSoa(domain),null),safe(()=>dns.resolveTxt(`_dmarc.${domain}`),[])]);const txt=TXT.map(x=>x.join(''));const dmarc=dmarcRaw.map(x=>x.join('')).find(x=>/^v=DMARC1/i.test(x))||null;return {A,AAAA,MX,NS,TXT:txt,CNAME,SOA,SPF:txt.find(x=>/^v=spf1/i.test(x))||null,DMARC:dmarc};}

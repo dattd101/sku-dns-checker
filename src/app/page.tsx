@@ -1,0 +1,2 @@
+import Analyzer from '@/components/Analyzer';
+export default function Home(){return <main className="shell"><section className="hero"><div className="eyebrow">Self-hosted · No paid API required</div><h1>Domain<br/>Inspector.</h1><p className="muted">SEO, HTTP, DNS, TLS và security headers trong một lần quét. Engine chạy server-side bằng Node.js.</p><Analyzer/></section><div className="footer">Chỉ quét website/domain bạn có quyền kiểm tra. Có SSRF guard cho localhost/private network.</div></main>}
