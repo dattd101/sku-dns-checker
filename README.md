@@ -33,3 +33,8 @@ Broken-link crawling toàn site, WHOIS port 43, RDAP, GeoIP MMDB, Lighthouse/Chr
 
 ## Security
 Tool nhận URL tùy ý nên SSRF là rủi ro chính. Code hiện chặn private/reserved address và revalidate redirect. Khi public internet, nên bổ sung rate limit, auth/API key, queue, egress firewall, max concurrency và logging.
+
+## GeoIP
+- Domain GEO tự resolve domain -> public IP rồi tra City/Region/Postal/Country/Lat/Lon/ISP/ASN.
+- IP GEO tự thử lấy public IP của trình duyệt bằng api.ipify.org và cho phép nhập IP/domain thủ công.
+- Geo metadata dùng endpoint miễn phí ipwho.is, không cần API key. Nếu endpoint tạm lỗi/rate-limit, UI báo không lấy được dữ liệu thay vì tạo dữ liệu giả.
