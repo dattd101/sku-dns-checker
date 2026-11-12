@@ -22,3 +22,14 @@ npm run dev
 Node.js 20+. Nếu có key BKNS riêng, thêm Environment Variable `BKNS_WHOIS_API_KEY`.
 
 Phát triển bởi Sku.
+
+## IP Lookup (miễn phí)
+
+Chọn **IP Lookup** trên thanh bên và nhập IPv4 hoặc IPv6 công khai. Chức năng này độc lập với nút Analyze.
+
+- API `POST /api/ip-lookup`, JSON: `{"ip":"103.7.40.159"}`.
+- Dùng `ipwho.is` cho ISP, tổ chức, ASN, vị trí; `rdap.org` cho chủ quản và dải IP. Không cần API key.
+- Dữ liệu được cache tối đa 1 giờ ở phía Next.js. Nếu một nguồn lỗi, nguồn còn lại vẫn được hiển thị.
+- IP private/reserved không được phép tra cứu. Thông tin chủ quản IP **không chứng minh** nơi trực tiếp bán VPS.
+
+Triển khai như ứng dụng Next.js hiện tại trên Vercel; không cần cấu hình biến môi trường.
